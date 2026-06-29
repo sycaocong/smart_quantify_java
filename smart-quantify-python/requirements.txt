@@ -1,0 +1,6 @@
+grpcio==1.61.0
+grpcio-tools==1.61.0
+protobuf==3.25.3
+pandas==2.2.1
+numpy==1.26.4
+python-dotenv==1.0.1

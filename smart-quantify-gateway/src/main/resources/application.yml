@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: smart-quantify-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: market-service
+          uri: lb://smart-quantify-market
+          predicates:
+            - Path=/api/v1/market/**
+        - id: strategy-service
+          uri: lb://smart-quantify-strategy
+          predicates:
+            - Path=/api/v1/strategies/**
+        - id: risk-service
+          uri: lb://smart-quantify-risk
+          predicates:
+            - Path=/api/v1/risk/**
+        - id: execution-service
+          uri: lb://smart-quantify-execution
+          predicates:
+            - Path=/api/v1/orders/**
+        - id: backtest-service
+          uri: lb://smart-quantify-backtest
+          predicates:
+            - Path=/api/v1/backtests/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package smartquantify.strategy;
+
+option java_multiple_files = true;
+option java_package = "com.smartquantify.api.grpc";
+option java_outer_classname = "StrategyProto";
+option objc_class_prefix = "SQ";
+
+message KlineData {
+    string symbol = 1;
+    string interval = 2;
+    string open_time = 3;
+    double open = 4;
+    double high = 5;
+    double low = 6;
+    double close = 7;
+    double volume = 8;
+    double quote_volume = 9;
+    string close_time = 10;
+}
+
+message SignalData {
+    string id = 1;
+    string strategy_id = 2;
+    string strategy_name = 3;
+    string symbol = 4;
+    string side = 5;
+    string type = 6;
+    double price = 7;
+    double quantity = 8;
+    string exchange = 9;
+    string instrument_type = 10;
+    int32 priority = 11;
+    string created_at = 12;
+    string status = 13;
+    double stop_loss = 14;
+    double take_profit = 15;
+}
+
+message ExecuteRequest {
+    string strategy_id = 1;
+    KlineData kline = 2;
+    map<string, string> parameters = 3;
+}
+
+message ExecuteResponse {
+    SignalData signal = 1;
+}
+
+message BacktestRequest {
+    string strategy_id = 1;
+    string symbol = 2;
+    string interval = 3;
+    string start_time = 4;
+    string end_time = 5;
+    double initial_capital = 6;
+    map<string, string> parameters = 7;
+    repeated KlineData klines = 8;
+}
+
+message BacktestResponse {
+    string task_id = 1;
+    double initial_capital = 2;
+    double final_capital = 3;
+    double total_return = 4;
+    double annualized_return = 5;
+    double max_drawdown = 6;
+    double sharpe_ratio = 7;
+    double win_rate = 8;
+    int32 total_trades = 9;
+    int32 winning_trades = 10;
+    int32 losing_trades = 11;
+}
+
+service StrategyService {
+    rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+    rpc Backtest(BacktestRequest) returns (BacktestResponse);
+}
