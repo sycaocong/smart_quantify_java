@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 策略实体类
+ * 设计文档: [DESIGN.md](../DESIGN.md#42-策略引擎)
+ */
 @Data
 @Entity
 @Builder

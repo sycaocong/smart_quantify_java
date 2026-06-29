@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 回测任务实体类
+ * 设计文档: [DESIGN.md](../DESIGN.md#45-回测服务)
+ */
 @Data
 @Entity
 @Builder

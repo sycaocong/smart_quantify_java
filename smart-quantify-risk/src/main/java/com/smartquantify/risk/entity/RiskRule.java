@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 风控规则实体类
+ * 设计文档: [DESIGN.md](../DESIGN.md#43-风控引擎)
+ */
 @Data
 @Entity
 @Builder

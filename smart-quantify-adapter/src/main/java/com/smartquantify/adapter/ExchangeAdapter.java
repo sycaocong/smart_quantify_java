@@ -6,6 +6,10 @@ import com.smartquantify.common.model.*;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * 交易所适配器接口
+ * 设计文档: [DESIGN.md](../DESIGN.md#47-交易所适配器)
+ */
 public interface ExchangeAdapter {
     String getName();
 

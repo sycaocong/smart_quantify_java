@@ -143,6 +143,8 @@ public enum StrategyStatus {
 }
 ```
 
+**实现代码**: [StrategyStatus.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/StrategyStatus.java)
+
 **策略实体**:
 
 ```java
@@ -201,6 +203,8 @@ public class Strategy {
 }
 ```
 
+**实现代码**: [Strategy.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/entity/Strategy.java)
+
 **核心服务接口**:
 
 | 方法 | 功能 |
@@ -213,6 +217,8 @@ public class Strategy {
 | `pauseStrategy(String id)` | 暂停策略 |
 | `updateStrategy(String id, StrategyRequest)` | 更新策略 |
 | `deleteStrategy(String id)` | 删除策略 |
+
+**实现代码**: [StrategyService.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/service/StrategyService.java), [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java)
 
 **Python 策略支持**:
 
@@ -250,6 +256,8 @@ public enum RiskRuleType {
     VOLUME_LIMIT
 }
 ```
+
+**实现代码**: [RiskRuleType.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/RiskRuleType.java)
 
 **风控规则实体**:
 
@@ -302,6 +310,8 @@ public class RiskRule {
 }
 ```
 
+**实现代码**: [RiskRule.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/entity/RiskRule.java)
+
 **核心服务接口**:
 
 | 方法 | 功能 |
@@ -314,6 +324,8 @@ public class RiskRule {
 | `checkRisk(Signal)` | 检查信号风险 |
 | `getLimits(String scope, String strategyId, String symbol, String exchange)` | 获取风险限额 |
 | `getState(String exchange, String strategyId)` | 获取风险状态 |
+
+**实现代码**: [RiskService.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/service/RiskService.java), [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java)
 
 **风险检查流程**:
 
@@ -342,6 +354,8 @@ public enum OrderStatus {
     REJECTED
 }
 ```
+
+**实现代码**: [OrderStatus.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/OrderStatus.java)
 
 **订单实体**:
 
@@ -400,6 +414,8 @@ public class Order {
 }
 ```
 
+**实现代码**: [Order.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/entity/Order.java)
+
 **核心服务接口**:
 
 | 方法 | 功能 |
@@ -409,6 +425,8 @@ public class Order {
 | `listOrders(String status, String symbol, String exchange)` | 列出订单 |
 | `cancelOrder(String id)` | 取消订单 |
 | `syncOrders()` | 同步交易所订单 |
+
+**实现代码**: [ExecutionService.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/service/ExecutionService.java), [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java)
 
 ### 4.5 回测服务
 
@@ -427,6 +445,8 @@ public enum BacktestStatus {
     CANCELLED
 }
 ```
+
+**实现代码**: [BacktestStatus.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/BacktestStatus.java)
 
 **回测任务实体**:
 
@@ -479,6 +499,8 @@ public class BacktestTask {
 }
 ```
 
+**实现代码**: [BacktestTask.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/entity/BacktestTask.java)
+
 **回测结果实体**:
 
 ```java
@@ -505,6 +527,8 @@ public class BacktestResult {
 }
 ```
 
+**实现代码**: [BacktestResult.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/dto/BacktestResult.java)
+
 **核心服务接口**:
 
 | 方法 | 功能 |
@@ -516,6 +540,8 @@ public class BacktestResult {
 | `cancelBacktest(String id)` | 取消回测 |
 | `getBacktestResult(String id)` | 获取回测结果 |
 | `generateReport(String id)` | 生成回测报告 |
+
+**实现代码**: [BacktestService.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/service/BacktestService.java), [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java)
 
 **回测流程**:
 
@@ -551,6 +577,8 @@ public class Kline {
 }
 ```
 
+**实现代码**: [Kline.java](smart-quantify-common/src/main/java/com/smartquantify/common/model/Kline.java)
+
 **核心服务接口**:
 
 | 方法 | 功能 |
@@ -562,7 +590,9 @@ public class Kline {
 | `subscribeKlines(String symbol, String interval)` | 订阅K线 |
 | `subscribeOrderBook(String symbol)` | 订阅订单簿 |
 
-### 4.6 交易所适配器
+**实现代码**: [MarketService.java](smart-quantify-market/src/main/java/com/smartquantify/market/service/MarketService.java), [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java)
+
+### 4.7 交易所适配器
 
 **模块**: `smart-quantify-adapter`
 
@@ -600,6 +630,8 @@ public interface ExchangeAdapter {
 }
 ```
 
+**实现代码**: [ExchangeAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/ExchangeAdapter.java)
+
 **支持的交易所**:
 
 | 交易所 | 类名 | 状态 |
@@ -608,6 +640,8 @@ public interface ExchangeAdapter {
 | OKX | `OkxAdapter` | 支持 |
 | Bybit | `BybitAdapter` | 支持 |
 | Huobi | `HuobiAdapter` | 支持 |
+
+**实现代码**: [BinanceAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/binance/BinanceAdapter.java), [OkxAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/okx/OkxAdapter.java)
 
 ## 5. 数据模型
 
@@ -622,6 +656,8 @@ public enum Side {
 }
 ```
 
+**实现代码**: [Side.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/Side.java)
+
 **订单类型**:
 
 ```java
@@ -632,6 +668,8 @@ public enum OrderType {
     STOP_LIMIT
 }
 ```
+
+**实现代码**: [OrderType.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/OrderType.java)
 
 **交易所**:
 
@@ -644,6 +682,8 @@ public enum Exchange {
 }
 ```
 
+**实现代码**: [Exchange.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/Exchange.java)
+
 **信号类型**:
 
 ```java
@@ -655,6 +695,8 @@ public enum SignalType {
 }
 ```
 
+**实现代码**: [SignalType.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/SignalType.java)
+
 **信号状态**:
 
 ```java
@@ -665,6 +707,8 @@ public enum SignalStatus {
     EXECUTED
 }
 ```
+
+**实现代码**: [SignalStatus.java](smart-quantify-common/src/main/java/com/smartquantify/common/enums/SignalStatus.java)
 
 ### 5.2 信号实体
 
@@ -688,6 +732,8 @@ public class Signal {
 }
 ```
 
+**实现代码**: [Signal.java](smart-quantify-common/src/main/java/com/smartquantify/common/model/Signal.java)
+
 ## 6. API 文档
 
 ### 6.1 市场数据接口
@@ -702,8 +748,9 @@ GET /api/v1/market/klines
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
+| exchange | string | 是 | 交易所：BINANCE/OKX/BYBIT/HUOBI |
 | symbol | string | 是 | 交易对，如 BTCUSDT |
-| interval | string | 是 | 时间间隔，如 1m, 5m, 1h, 1d |
+| interval | string | 是 | 时间间隔：1m/5m/15m/1h/4h/1d |
 | limit | int | 否 | 返回数量，默认 100 |
 
 **响应示例**:
@@ -716,19 +763,22 @@ GET /api/v1/market/klines
     "klines": [
       {
         "symbol": "BTCUSDT",
-        "interval": "1m",
-        "openTime": "2024-01-01T00:00:00Z",
+        "interval": "1h",
+        "openTime": "2024-01-01T00:00:00",
         "open": 45000.0,
         "high": 45100.0,
         "low": 44900.0,
         "close": 45050.0,
         "volume": 100.5,
-        "quoteVolume": 4527525.0
+        "quoteVolume": 4527525.0,
+        "closeTime": "2024-01-01T01:00:00"
       }
     ]
   }
 }
 ```
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L31-L42)
 
 #### 6.1.2 获取订单簿
 
@@ -740,8 +790,32 @@ GET /api/v1/market/orderbook
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
+| exchange | string | 是 | 交易所 |
 | symbol | string | 是 | 交易对 |
 | limit | int | 否 | 返回深度，默认 100 |
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "orderBook": {
+      "symbol": "BTCUSDT",
+      "timestamp": 1704067200000,
+      "asks": [
+        {"price": 45100.0, "quantity": 10.0}
+      ],
+      "bids": [
+        {"price": 44900.0, "quantity": 10.0}
+      ]
+    }
+  }
+}
+```
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L50-L60)
 
 #### 6.1.3 获取Ticker
 
@@ -753,7 +827,94 @@ GET /api/v1/market/ticker
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
+| exchange | string | 是 | 交易所 |
 | symbol | string | 否 | 交易对，不传则返回全部 |
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "ticker": {
+      "symbol": "BTCUSDT",
+      "lastPrice": 45050.0,
+      "openPrice": 44800.0,
+      "highPrice": 45200.0,
+      "lowPrice": 44700.0,
+      "volume24h": 10000.0,
+      "quoteVolume24h": 450500000.0,
+      "priceChange24h": 250.0,
+      "priceChangePercent24h": 0.56,
+      "timestamp": "2024-01-01T12:00:00"
+    }
+  }
+}
+```
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L68-L82)
+
+#### 6.1.4 获取合约列表
+
+```
+GET /api/v1/market/instruments
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| exchange | string | 是 | 交易所 |
+| type | string | 否 | 合约类型：SPOT/FUTURES/OPTIONS |
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L90-L100)
+
+#### 6.1.5 订阅K线
+
+```
+POST /api/v1/market/subscribe/klines
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| exchange | string | 是 | 交易所 |
+| symbol | string | 是 | 交易对 |
+| interval | string | 是 | 时间间隔 |
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L108-L116)
+
+#### 6.1.6 订阅订单簿
+
+```
+POST /api/v1/market/subscribe/orderbook
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| exchange | string | 是 | 交易所 |
+| symbol | string | 是 | 交易对 |
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L124-L132)
+
+#### 6.1.7 取消订阅
+
+```
+POST /api/v1/market/unsubscribe
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| exchange | string | 是 | 交易所 |
+| symbol | string | 是 | 交易对 |
+
+**实现代码**: [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java#L140-L148)
 
 ### 6.2 策略管理接口
 
@@ -778,7 +939,7 @@ POST /api/v1/strategies
     "short_period": "5",
     "long_period": "20"
   },
-  "script": "def execute(kline):\n    return signal"
+  "config": {}
 }
 ```
 
@@ -793,12 +954,19 @@ POST /api/v1/strategies
       "id": "uuid-xxx",
       "name": "MA交叉策略",
       "type": "MA_CROSS",
+      "language": "python",
       "status": "STOPPED",
-      "createdAt": "2024-01-01T00:00:00Z"
+      "exchange": "BINANCE",
+      "symbols": "[\"BTCUSDT\",\"ETHUSDT\"]",
+      "interval": "1h",
+      "createdAt": "2024-01-01T00:00:00",
+      "updatedAt": "2024-01-01T00:00:00"
     }
   }
 }
 ```
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L30-L38)
 
 #### 6.2.2 获取策略列表
 
@@ -806,11 +974,43 @@ POST /api/v1/strategies
 GET /api/v1/strategies
 ```
 
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "strategies": [
+      {
+        "id": "uuid-xxx",
+        "name": "MA交叉策略",
+        "type": "MA_CROSS",
+        "status": "RUNNING",
+        "exchange": "BINANCE",
+        "interval": "1h",
+        "createdAt": "2024-01-01T00:00:00"
+      }
+    ]
+  }
+}
+```
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L59-L67)
+
 #### 6.2.3 获取策略详情
 
 ```
 GET /api/v1/strategies/{id}
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L40-L48)
 
 #### 6.2.4 启动策略
 
@@ -818,11 +1018,82 @@ GET /api/v1/strategies/{id}
 POST /api/v1/strategies/{id}/start
 ```
 
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L74-L82)
+
 #### 6.2.5 停止策略
 
 ```
 POST /api/v1/strategies/{id}/stop
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L89-L97)
+
+#### 6.2.6 暂停策略
+
+```
+POST /api/v1/strategies/{id}/pause
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L104-L112)
+
+#### 6.2.7 更新策略
+
+```
+PUT /api/v1/strategies/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**请求体**:
+
+```json
+{
+  "name": "MA交叉策略(更新)",
+  "description": "更新后的描述",
+  "parameters": {
+    "short_period": "10",
+    "long_period": "30"
+  }
+}
+```
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L119-L127)
+
+#### 6.2.8 删除策略
+
+```
+DELETE /api/v1/strategies/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 策略ID |
+
+**实现代码**: [StrategyController.java](smart-quantify-strategy/src/main/java/com/smartquantify/strategy/controller/StrategyController.java#L134-L141)
 
 ### 6.3 风控管理接口
 
@@ -852,7 +1123,98 @@ POST /api/v1/risk/rules
 }
 ```
 
-#### 6.3.2 风险检查
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "rule": {
+      "id": "rule-uuid",
+      "name": "最大仓位限制",
+      "type": "POSITION_LIMIT",
+      "enabled": true,
+      "priority": 1,
+      "createdAt": "2024-01-01T00:00:00"
+    }
+  }
+}
+```
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L30-L38)
+
+#### 6.3.2 获取风控规则列表
+
+```
+GET /api/v1/risk/rules
+```
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "rules": [
+      {
+        "id": "rule-uuid",
+        "name": "最大仓位限制",
+        "type": "POSITION_LIMIT",
+        "enabled": true,
+        "priority": 1
+      }
+    ]
+  }
+}
+```
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L59-L67)
+
+#### 6.3.3 获取风控规则详情
+
+```
+GET /api/v1/risk/rules/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 规则ID |
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L40-L48)
+
+#### 6.3.4 更新风控规则
+
+```
+PUT /api/v1/risk/rules/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 规则ID |
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L104-L112)
+
+#### 6.3.5 删除风控规则
+
+```
+DELETE /api/v1/risk/rules/{id}
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 规则ID |
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L119-L127)
+
+#### 6.3.6 风险检查
 
 ```
 POST /api/v1/risk/check
@@ -891,6 +1253,37 @@ POST /api/v1/risk/check
 }
 ```
 
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L74-L82)
+
+#### 6.3.7 获取风控限额
+
+```
+GET /api/v1/risk/limits
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| strategyId | string | 否 | 策略ID |
+| exchange | string | 否 | 交易所 |
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L134-L142)
+
+#### 6.3.8 获取风控状态
+
+```
+GET /api/v1/risk/state
+```
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| strategyId | string | 否 | 策略ID |
+
+**实现代码**: [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java#L149-L157)
+
 ### 6.4 订单执行接口
 
 #### 6.4.1 提交订单
@@ -903,13 +1296,15 @@ POST /api/v1/orders
 
 ```json
 {
+  "exchange": "BINANCE",
   "symbol": "BTCUSDT",
   "side": "BUY",
   "type": "MARKET",
   "quantity": 0.1,
   "price": 45000.0,
   "timeInForce": "GTC",
-  "clientOrderId": "my-order-001"
+  "clientOrderId": "my-order-001",
+  "strategyId": "strategy-uuid"
 }
 ```
 
@@ -927,17 +1322,29 @@ POST /api/v1/orders
       "type": "MARKET",
       "quantity": 0.1,
       "status": "NEW",
-      "createdAt": "2024-01-01T00:00:00Z"
+      "exchange": "BINANCE",
+      "strategyId": "strategy-uuid",
+      "createdAt": "2024-01-01T00:00:00"
     }
   }
 }
 ```
+
+**实现代码**: [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java#L30-L38)
 
 #### 6.4.2 获取订单
 
 ```
 GET /api/v1/orders/{id}
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 订单ID |
+
+**实现代码**: [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java#L40-L48)
 
 #### 6.4.3 获取订单列表
 
@@ -949,15 +1356,63 @@ GET /api/v1/orders
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| status | string | 否 | 订单状态 |
+| status | string | 否 | 订单状态：NEW/PARTIALLY_FILLED/FILLED/CANCELLED/REJECTED |
 | symbol | string | 否 | 交易对 |
 | exchange | string | 否 | 交易所 |
+| strategyId | string | 否 | 策略ID |
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "orders": [
+      {
+        "id": "order-uuid",
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "type": "MARKET",
+        "quantity": 0.1,
+        "status": "FILLED",
+        "exchange": "BINANCE",
+        "createdAt": "2024-01-01T00:00:00"
+      }
+    ]
+  }
+}
+```
+
+**实现代码**: [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java#L56-L64)
 
 #### 6.4.4 取消订单
 
 ```
 DELETE /api/v1/orders/{id}
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 订单ID |
+
+**实现代码**: [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java#L71-L79)
+
+#### 6.4.5 同步订单状态
+
+```
+POST /api/v1/orders/{id}/sync
+```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 订单ID |
+
+**实现代码**: [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java#L86-L94)
 
 ### 6.5 回测接口
 
@@ -973,10 +1428,11 @@ POST /api/v1/backtests
 {
   "strategyId": "uuid-xxx",
   "strategyName": "MA交叉策略",
+  "exchange": "BINANCE",
   "symbol": "BTCUSDT",
   "interval": "1h",
-  "startTime": "2024-01-01T00:00:00Z",
-  "endTime": "2024-01-31T23:59:59Z",
+  "startTime": "2024-01-01T00:00:00",
+  "endTime": "2024-01-31T23:59:59",
   "initialCapital": 10000.0,
   "parameters": {
     "short_period": "5",
@@ -997,11 +1453,15 @@ POST /api/v1/backtests
       "strategyId": "uuid-xxx",
       "symbol": "BTCUSDT",
       "status": "PENDING",
-      "createdAt": "2024-01-01T00:00:00Z"
+      "exchange": "BINANCE",
+      "initialCapital": 10000.0,
+      "createdAt": "2024-01-01T00:00:00"
     }
   }
 }
 ```
+
+**实现代码**: [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java#L30-L38)
 
 #### 6.5.2 获取回测任务列表
 
@@ -1009,11 +1469,41 @@ POST /api/v1/backtests
 GET /api/v1/backtests
 ```
 
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "backtests": [
+      {
+        "id": "backtest-uuid",
+        "strategyId": "uuid-xxx",
+        "symbol": "BTCUSDT",
+        "status": "COMPLETED",
+        "createdAt": "2024-01-01T00:00:00"
+      }
+    ]
+  }
+}
+```
+
+**实现代码**: [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java#L59-L67)
+
 #### 6.5.3 获取回测任务详情
 
 ```
 GET /api/v1/backtests/{id}
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 回测任务ID |
+
+**实现代码**: [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java#L40-L48)
 
 #### 6.5.4 运行回测
 
@@ -1021,17 +1511,39 @@ GET /api/v1/backtests/{id}
 POST /api/v1/backtests/{id}/run
 ```
 
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 回测任务ID |
+
+**实现代码**: [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java#L74-L82)
+
 #### 6.5.5 取消回测
 
 ```
 POST /api/v1/backtests/{id}/cancel
 ```
 
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 回测任务ID |
+
+**实现代码**: [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java#L89-L97)
+
 #### 6.5.6 获取回测结果
 
 ```
 GET /api/v1/backtests/{id}/result
 ```
+
+**路径参数**:
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | string | 回测任务ID |
 
 **响应示例**:
 

@@ -13,6 +13,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 订单实体类
+ * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+ */
 @Data
 @Entity
 @Builder

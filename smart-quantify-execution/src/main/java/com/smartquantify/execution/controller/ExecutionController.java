@@ -11,12 +11,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 订单执行控制器
+ * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+ */
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
 public class ExecutionController {
     private final ExecutionService executionService;
 
+    /**
+     * 提交订单
+     * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+     * API文档: [API.md](../API.md#51-提交订单)
+     */
     @PostMapping
     public ResponseEntity<Map<String, Object>> submitOrder(@RequestBody OrderRequest request) {
         Order order = executionService.submitOrder(request);
@@ -27,6 +36,11 @@ public class ExecutionController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 获取订单详情
+     * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+     * API文档: [API.md](../API.md#52-获取订单详情)
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getOrder(@PathVariable String id) {
         Order order = executionService.getOrder(id);
@@ -37,6 +51,11 @@ public class ExecutionController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 获取订单列表
+     * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+     * API文档: [API.md](../API.md#53-获取订单列表)
+     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> listOrders(
             @RequestParam(required = false) String status,
@@ -50,6 +69,11 @@ public class ExecutionController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 取消订单
+     * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+     * API文档: [API.md](../API.md#54-取消订单)
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable String id) {
         Order order = executionService.cancelOrder(id);
@@ -60,6 +84,11 @@ public class ExecutionController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 同步订单
+     * 设计文档: [DESIGN.md](../DESIGN.md#44-订单执行服务)
+     * API文档: [API.md](../API.md#55-同步订单)
+     */
     @PostMapping("/sync")
     public ResponseEntity<Map<String, Object>> syncOrders() {
         executionService.syncOrders();

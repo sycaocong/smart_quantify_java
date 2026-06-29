@@ -13,12 +13,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 市场数据控制器
+ * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+ */
 @RestController
 @RequestMapping("/api/v1/market")
 @RequiredArgsConstructor
 public class MarketController {
     private final MarketService marketService;
 
+    /**
+     * 获取K线数据
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#21-获取k线数据)
+     */
     @GetMapping("/klines")
     public ResponseEntity<Map<String, Object>> getKlines(
             @RequestParam String exchange,
@@ -33,6 +42,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 获取订单簿
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#22-获取订单簿)
+     */
     @GetMapping("/orderbook")
     public ResponseEntity<Map<String, Object>> getOrderBook(
             @RequestParam String exchange,
@@ -46,6 +60,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 获取Ticker
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#23-获取ticker)
+     */
     @GetMapping("/ticker")
     public ResponseEntity<Map<String, Object>> getTicker(
             @RequestParam String exchange,
@@ -63,6 +82,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 获取合约列表
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#24-获取合约列表)
+     */
     @GetMapping("/instruments")
     public ResponseEntity<Map<String, Object>> getInstruments(
             @RequestParam String exchange,
@@ -75,6 +99,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 订阅K线
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#25-订阅k线)
+     */
     @PostMapping("/subscribe/klines")
     public ResponseEntity<Map<String, Object>> subscribeKlines(
             @RequestParam String exchange,
@@ -87,6 +116,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 订阅订单簿
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#26-订阅订单簿)
+     */
     @PostMapping("/subscribe/orderbook")
     public ResponseEntity<Map<String, Object>> subscribeOrderBook(
             @RequestParam String exchange,
@@ -98,6 +132,11 @@ public class MarketController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * 取消订阅
+     * 设计文档: [DESIGN.md](../DESIGN.md#46-市场服务)
+     * API文档: [API.md](../API.md#27-取消订阅)
+     */
     @PostMapping("/unsubscribe")
     public ResponseEntity<Map<String, Object>> unsubscribe(
             @RequestParam String exchange,
