@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import reactor.core.publisher.Mono;
 
@@ -19,27 +20,35 @@ public class RateLimitConfig {
     private final StringRedisTemplate redisTemplate;
 
     @Bean
+    @Primary
+    public KeyResolver defaultKeyResolver() {
+        return exchange -> Mono.just(
+                exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+        );
+    }
+
+    @Bean("remoteAddressKeyResolver")
     public KeyResolver remoteAddressKeyResolver() {
         return exchange -> Mono.just(
                 exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
         );
     }
 
-    @Bean
+    @Bean("userIdKeyResolver")
     public KeyResolver userIdKeyResolver() {
         return exchange -> Mono.justOrEmpty(
                 exchange.getRequest().getHeaders().getFirst("X-User-Id")
         ).defaultIfEmpty("anonymous");
     }
 
-    @Bean
+    @Bean("apiKeyResolver")
     public KeyResolver apiKeyResolver() {
         return exchange -> Mono.justOrEmpty(
                 exchange.getRequest().getHeaders().getFirst("X-API-Key")
         ).defaultIfEmpty("no-api-key");
     }
 
-    @Bean
+    @Bean("strategyKeyResolver")
     public KeyResolver strategyKeyResolver() {
         return exchange -> {
             String path = exchange.getRequest().getPath().toString();

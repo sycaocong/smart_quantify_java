@@ -1,10 +1,14 @@
 spring:
   application:
     name: smart-quantify-strategy
+  config:
+    import: optional:nacos:${SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR:localhost:8848}
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR:localhost:8848}
       config:
-        server-addr: localhost:8848
+        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR:localhost:8848}
         file-extension: yml
+        import-check:
+          enabled: false

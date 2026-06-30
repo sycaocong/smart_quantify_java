@@ -2,6 +2,7 @@ package com.smartquantify.common.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -19,22 +20,47 @@ public class DataSourceConfig {
 
     public static final ThreadLocal<String> DATASOURCE_KEY = ThreadLocal.withInitial(() -> "master");
 
+    @Value("${spring.datasource.master.url:}")
+    private String masterUrl;
+
+    @Value("${spring.datasource.master.username:}")
+    private String masterUsername;
+
+    @Value("${spring.datasource.master.password:}")
+    private String masterPassword;
+
+    @Value("${spring.datasource.slave.url:}")
+    private String slaveUrl;
+
+    @Value("${spring.datasource.slave.username:}")
+    private String slaveUsername;
+
+    @Value("${spring.datasource.slave.password:}")
+    private String slavePassword;
+
     @Bean(name = "masterDataSource")
-    @ConfigurationProperties(prefix = "spring.datasource.master")
     public DataSource masterDataSource() {
-        log.info("Initializing master data source");
-        return DataSourceBuilder.create().build();
+        log.info("Initializing master data source: {}", masterUrl);
+        return DataSourceBuilder.create()
+                .url(masterUrl)
+                .username(masterUsername)
+                .password(masterPassword)
+                .driverClassName("com.mysql.cj.jdbc.Driver")
+                .build();
     }
 
     @Bean(name = "slaveDataSource")
-    @ConfigurationProperties(prefix = "spring.datasource.slave")
     public DataSource slaveDataSource() {
-        log.info("Initializing slave data source");
-        return DataSourceBuilder.create().build();
+        log.info("Initializing slave data source: {}", slaveUrl);
+        return DataSourceBuilder.create()
+                .url(slaveUrl)
+                .username(slaveUsername)
+                .password(slavePassword)
+                .driverClassName("com.mysql.cj.jdbc.Driver")
+                .build();
     }
 
     @Bean(name = "routingDataSource")
-    @Primary
     public DataSource routingDataSource(
             @Qualifier("masterDataSource") DataSource masterDataSource,
             @Qualifier("slaveDataSource") DataSource slaveDataSource) {
@@ -54,6 +80,13 @@ public class DataSourceConfig {
         routingDataSource.setDefaultTargetDataSource(masterDataSource);
         
         log.info("Routing data source configured with master/slave");
+        return routingDataSource;
+    }
+
+    @Bean(name = "dataSource")
+    @Primary
+    public DataSource dataSource(@Qualifier("routingDataSource") DataSource routingDataSource) {
+        log.info("Primary data source configured");
         return routingDataSource;
     }
 
