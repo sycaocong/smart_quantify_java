@@ -571,5 +571,5 @@ API 网关是系统的统一入口，负责：
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 [Issue](https://github.com/your-username/smart_quantify_java/issues)
+- [微信二维码](微信图片_20260630212706_17_2.jpg)
 - 发送邮件至 support@smartquantify.io
