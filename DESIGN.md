@@ -327,6 +327,20 @@ public class RiskRule {
 
 **实现代码**: [RiskService.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/service/RiskService.java), [RiskController.java](smart-quantify-risk/src/main/java/com/smartquantify/risk/controller/RiskController.java)
 
+**缓存策略**:
+
+使用 Spring Cache + Caffeine 实现风控规则和状态的缓存，提高风险检查性能。
+
+**缓存配置**:
+
+| 方法 | 缓存名称 | 缓存键 | 过期时间 |
+|------|----------|--------|----------|
+| `listRules` | riskRules | - | 10s |
+| `getState` | riskState | exchange:strategyId | 10s |
+
+**缓存更新**:
+- 创建/更新/删除规则时自动清除 `riskRules` 缓存（`@CacheEvict`）
+
 **风险检查流程**:
 
 ```
@@ -427,6 +441,22 @@ public class Order {
 | `syncOrders()` | 同步交易所订单 |
 
 **实现代码**: [ExecutionService.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/service/ExecutionService.java), [ExecutionController.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/controller/ExecutionController.java)
+
+**异步订单执行**:
+
+采用 Outbox 模式实现异步订单提交，通过 Kafka 解耦订单创建和执行，提高系统吞吐量和可用性。
+
+**订单执行流程**:
+```
+1. 用户提交订单请求
+2. ExecutionService 保存订单到数据库（状态为 NEW）
+3. 发布 OrderCreatedEvent 到 Kafka 主题 `order-created`
+4. OrderExecutionConsumer 消费消息，调用交易所适配器执行订单
+5. 更新订单状态，发布 OrderExecutedEvent 到 Kafka 主题 `order-executed`
+6. 如果订单完全成交，创建 Trade 记录
+```
+
+**实现代码**: [OrderExecutionConsumer.java](smart-quantify-execution/src/main/java/com/smartquantify/execution/consumer/OrderExecutionConsumer.java)
 
 ### 4.5 回测服务
 
@@ -543,6 +573,19 @@ public class BacktestResult {
 
 **实现代码**: [BacktestService.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/service/BacktestService.java), [BacktestController.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/controller/BacktestController.java)
 
+**异步回测执行**:
+
+使用 `@Async` 注解配合独立线程池实现异步回测，避免阻塞请求线程。
+
+**线程池配置**:
+- 线程池名称: `backtestExecutor`
+- 核心线程数: 4
+- 最大线程数: 8
+- 队列容量: 100
+- 线程前缀: `backtest-`
+
+**实现代码**: [BacktestAsyncConfig.java](smart-quantify-backtest/src/main/java/com/smartquantify/backtest/config/BacktestAsyncConfig.java)
+
 **回测流程**:
 
 ```
@@ -592,6 +635,21 @@ public class Kline {
 
 **实现代码**: [MarketService.java](smart-quantify-market/src/main/java/com/smartquantify/market/service/MarketService.java), [MarketController.java](smart-quantify-market/src/main/java/com/smartquantify/market/controller/MarketController.java)
 
+**缓存策略**:
+
+使用 Spring Cache + Caffeine 实现市场数据缓存，减少对交易所 API 的调用频率。
+
+**缓存配置**:
+
+| 方法 | 缓存名称 | 缓存键 | 过期时间 |
+|------|----------|--------|----------|
+| `getKlines` | klines | exchange:symbol:interval:limit | 10s |
+| `getOrderBook` | orderBook | exchange:symbol:limit | 10s |
+| `getTicker` | ticker | exchange:symbol | 10s |
+| `getInstruments` | instruments | exchange:type | 10s |
+
+**实现代码**: [CacheConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/CacheConfig.java)
+
 ### 4.7 交易所适配器
 
 **模块**: `smart-quantify-adapter`
@@ -630,7 +688,7 @@ public interface ExchangeAdapter {
 }
 ```
 
-**实现代码**: [ExchangeAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/ExchangeAdapter.java)
+**实现代码**: [ExchangeAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/ExchangeAdapter.java)
 
 **支持的交易所**:
 
@@ -641,7 +699,7 @@ public interface ExchangeAdapter {
 | Bybit | `BybitAdapter` | 支持 |
 | Huobi | `HuobiAdapter` | 支持 |
 
-**实现代码**: [BinanceAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/binance/BinanceAdapter.java), [OkxAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/exchange/okx/OkxAdapter.java)
+**实现代码**: [BinanceAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/binance/BinanceAdapter.java), [OkxAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/okx/OkxAdapter.java)
 
 ## 5. 数据模型
 
@@ -1581,7 +1639,8 @@ GET /api/v1/backtests/{id}/result
 | `smart_quantify.orderbook` | 订单簿数据 | market-service | strategy-service |
 | `smart_quantify.tickers` | Ticker数据 | market-service | - |
 | `smart_quantify.signals` | 交易信号 | strategy-service | risk-service |
-| `smart_quantify.order_events` | 订单事件 | execution-service | - |
+| `order-created` | 订单创建事件 | execution-service | execution-consumer |
+| `order-executed` | 订单执行事件 | execution-consumer | strategy-service |
 
 ### 7.2 Kafka 配置
 
@@ -1652,7 +1711,20 @@ ORDER BY (symbol, interval, open_time);
 
 ### 8.3 Redis
 
-用于缓存和实时数据存储。
+用于缓存和实时数据存储，支持 Spring Data Redis 和 Redisson 双客户端。
+
+**Redis 配置**:
+
+使用 Lettuce 连接池管理 Redis 连接，配合 Redisson 实现分布式锁。
+
+| 参数 | 值 |
+|------|-----|
+| max-active | 16 |
+| max-idle | 8 |
+| min-idle | 2 |
+| max-wait | 2000ms |
+
+**实现代码**: [RedisConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/RedisConfig.java)
 
 **缓存键**:
 
@@ -1842,8 +1914,10 @@ smart-quantify-java/
 ├── smart-quantify-common/               # 公共模块
 │   ├── pom.xml
 │   └── src/main/java/com/smartquantify/common/
+│       ├── config/                      # 配置类（缓存、Redis、熔断）
 │       ├── enums/                       # 枚举类
 │       ├── model/                       # 通用模型
+│       ├── event/                       # 事件类（Kafka）
 │       └── util/                        # 工具类
 ├── smart-quantify-api/                  # API定义模块
 │   ├── pom.xml
@@ -1855,7 +1929,8 @@ smart-quantify-java/
 ├── smart-quantify-gateway/              # API网关
 │   ├── pom.xml
 │   └── src/main/java/com/smartquantify/gateway/
-│       └── GatewayApplication.java
+│       ├── GatewayApplication.java
+│       └── config/                       # 限流配置
 ├── smart-quantify-strategy/             # 策略引擎
 │   ├── pom.xml
 │   └── src/main/java/com/smartquantify/strategy/
@@ -1884,6 +1959,7 @@ smart-quantify-java/
 │       ├── service/
 │       ├── repository/
 │       ├── entity/
+│       ├── consumer/                     # Kafka消费者（订单执行）
 │       └── kafka/
 ├── smart-quantify-market/               # 市场服务
 │   ├── pom.xml
@@ -1897,6 +1973,7 @@ smart-quantify-java/
 │   ├── pom.xml
 │   └── src/main/java/com/smartquantify/backtest/
 │       ├── BacktestApplication.java
+│       ├── config/                      # 异步线程池配置
 │       ├── controller/
 │       ├── service/
 │       ├── repository/
@@ -1948,68 +2025,81 @@ smart-quantify-java/
 - Kafka 异步写入 ClickHouse
 - Redis 缓存实时数据
 
-## 13. 安全设计
+## 13. Spring Boot 注解配置
 
-### 13.1 API 认证
+各模块 Application 类需要添加相应的启用注解：
+
+| 模块 | 注解 | 说明 |
+|------|------|------|
+| StrategyApplication | `@EnableDiscoveryClient`, `@EnableCaching` | 服务注册、缓存支持 |
+| RiskApplication | `@EnableDiscoveryClient`, `@EnableCaching` | 服务注册、缓存支持 |
+| ExecutionApplication | `@EnableDiscoveryClient`, `@EnableCaching`, `@EnableKafka` | 服务注册、缓存、Kafka |
+| MarketApplication | `@EnableDiscoveryClient`, `@EnableCaching` | 服务注册、缓存支持 |
+| BacktestApplication | `@EnableDiscoveryClient`, `@EnableCaching`, `@EnableAsync` | 服务注册、缓存、异步执行 |
+| GatewayApplication | `@EnableDiscoveryClient` | 服务注册 |
+
+## 14. 安全设计
+
+### 14.1 API 认证
 
 - 使用 JWT Token 认证
 - API Key + Secret 签名验证
 - 接口限流和熔断
 
-### 13.2 数据加密
+### 14.2 数据加密
 
 - 数据库敏感字段加密（API Key/Secret）
 - HTTPS 传输加密
 - Redis 数据加密
 
-### 13.3 访问控制
+### 14.3 访问控制
 
 - 基于角色的权限控制（RBAC）
 - IP 白名单限制
 - 操作日志审计
 
-## 14. 扩展性设计
+## 15. 扩展性设计
 
-### 14.1 新交易所接入
+### 15.1 新交易所接入
 
 1. 实现 `ExchangeAdapter` 接口
 2. 添加配置类
 3. 在 Nacos 中注册配置
 4. 重启服务自动加载
 
-### 14.2 新策略类型接入
+### 15.2 新策略类型接入
 
 1. 创建策略执行器实现类
 2. 注册到策略工厂
 3. 在前端配置策略参数
 
-### 14.3 新风控规则接入
+### 15.3 新风控规则接入
 
-1. 在 Drools 规则文件中添加新规则
-2. 在枚举中添加规则类型
-3. 实现规则评估逻辑
+1. 在枚举中添加规则类型
+2. 实现规则评估逻辑
+3. 在数据库中配置规则
 
-## 15. 测试策略
+## 16. 测试策略
 
-### 15.1 单元测试
+### 16.1 单元测试
 
 - 核心业务逻辑测试
 - 规则引擎测试
 - 适配器接口测试
 
-### 15.2 集成测试
+### 16.2 集成测试
 
 - 服务间调用测试
 - Kafka 消息传递测试
 - 数据库操作测试
 
-### 15.3 端到端测试
+### 16.3 端到端测试
 
 - 完整交易流程测试
 - 策略执行流程测试
 - 风控检查流程测试
 
-## 16. 性能指标
+## 17. 性能指标
 
 | 指标 | 目标值 |
 |------|--------|
@@ -2019,3 +2109,268 @@ smart-quantify-java/
 | 市场数据处理 | 10000 msg/s |
 | 服务并发量 | 10000 QPS |
 | 消息队列吞吐量 | 100000 msg/s |
+
+## 18. 高并发高可用设计
+
+### 18.1 缓存策略
+
+采用多级缓存架构，结合 Caffeine 本地缓存和 Redis 分布式缓存，提高数据访问性能。
+
+**Caffeine 本地缓存配置**：
+
+| 缓存名称 | 初始容量 | 最大容量 | 过期时间 | 访问过期 |
+|----------|----------|----------|----------|----------|
+| klines | 500 | 50000 | 10s | 5s |
+| orderBook | 500 | 50000 | 10s | 5s |
+| ticker | 500 | 50000 | 10s | 5s |
+| instruments | 500 | 50000 | 10s | 5s |
+| riskRules | 500 | 50000 | 10s | 5s |
+| riskState | 500 | 50000 | 10s | 5s |
+
+**实现代码**: [CacheConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/CacheConfig.java)
+
+**Redis 分布式缓存配置**：
+
+| 缓存名称 | 过期时间 |
+|----------|----------|
+| klines | 30s |
+| orderBook | 15s |
+| ticker | 10s |
+| instruments | 5min |
+| riskRules | 10min |
+| riskState | 5min |
+
+### 18.2 分布式锁
+
+支持 Redis 和 etcd 两种分布式锁模式，通过配置切换。
+
+**接口定义**:
+
+```java
+public interface DistributedLock {
+    boolean tryLock(String lockKey, long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException;
+    void lock(String lockKey, long leaseTime, TimeUnit unit);
+    void unlock(String lockKey);
+    boolean isLocked(String lockKey);
+}
+```
+
+**实现代码**: [DistributedLock.java](smart-quantify-common/src/main/java/com/smartquantify/common/lock/DistributedLock.java)
+
+**Redis 实现**: 使用 Redisson 实现，支持可重入锁、自动续期。
+
+**实现代码**: [RedisDistributedLock.java](smart-quantify-common/src/main/java/com/smartquantify/common/lock/RedisDistributedLock.java)
+
+**Etcd 实现**: 基于内存模拟，实际生产环境应接入 etcd 客户端。
+
+**实现代码**: [EtcdDistributedLock.java](smart-quantify-common/src/main/java/com/smartquantify/common/lock/EtcdDistributedLock.java)
+
+**工厂模式**: 通过配置 `smartquantify.lock.mode` 切换锁模式。
+
+**实现代码**: [DistributedLockFactory.java](smart-quantify-common/src/main/java/com/smartquantify/common/lock/DistributedLockFactory.java)
+
+### 18.3 数据库读写分离
+
+通过 Spring AOP 实现自动读写分离，读操作路由到从库，写操作路由到主库。
+
+**配置示例**:
+
+```yaml
+spring:
+  datasource:
+    master:
+      url: jdbc:mysql://localhost:3306/smart_quantify
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        pool-name: master-hikari-pool
+    slave:
+      url: jdbc:mysql://localhost:3306/smart_quantify
+      hikari:
+        maximum-pool-size: 30
+        minimum-idle: 10
+        pool-name: slave-hikari-pool
+```
+
+**实现代码**: [DataSourceConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/DataSourceConfig.java)
+
+**AOP 切面**: 自动识别 CRUD 操作并路由到对应数据源。
+
+**实现代码**: [DataSourceAspect.java](smart-quantify-common/src/main/java/com/smartquantify/common/aspect/DataSourceAspect.java)
+
+### 18.4 异步线程池
+
+配置多个业务线程池，隔离不同业务的资源使用。
+
+**线程池配置**:
+
+| 线程池名称 | 核心线程数 | 最大线程数 | 队列容量 | 线程前缀 |
+|------------|------------|------------|----------|----------|
+| commonExecutor | 8 | 16 | 1000 | common- |
+| backtestExecutor | 4 | 8 | 50 | backtest- |
+| orderExecutor | 10 | 20 | 500 | order- |
+| marketDataExecutor | 12 | 24 | 2000 | market- |
+| riskExecutor | 6 | 12 | 200 | risk- |
+| strategyExecutor | 8 | 16 | 100 | strategy- |
+
+**实现代码**: [AsyncThreadPoolConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/AsyncThreadPoolConfig.java)
+
+### 18.5 熔断与限流
+
+使用 Resilience4j 实现熔断器、限流器和舱壁模式。
+
+**熔断器配置**:
+
+| 参数 | 值 |
+|------|-----|
+| failureRateThreshold | 50% |
+| waitDurationInOpenState | 30s |
+| permittedNumberOfCallsInHalfOpenState | 5 |
+| slidingWindowSize | 100 |
+| minimumNumberOfCalls | 10 |
+
+**限流器配置**:
+
+| 参数 | 值 |
+|------|-----|
+| limitForPeriod | 100 |
+| limitRefreshPeriod | 1s |
+| timeoutDuration | 5s |
+
+**舱壁配置**:
+
+| 参数 | 值 |
+|------|-----|
+| maxConcurrentCalls | 20 |
+| maxWaitDuration | 500ms |
+
+**实现代码**: [Resilience4jConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/Resilience4jConfig.java)
+
+**交易所适配器集成**: 在 Binance、OKX、Bybit、Huobi 适配器中添加熔断注解。
+
+**实现代码**: [BinanceAdapter.java](smart-quantify-adapter/src/main/java/com/smartquantify/adapter/binance/BinanceAdapter.java)
+
+### 18.6 Kafka 优化
+
+**生产者优化**:
+
+| 参数 | 值 |
+|------|-----|
+| acks | all |
+| batch-size | 32768 |
+| linger-ms | 10 |
+| retries | 5 |
+| compression-type | lz4 |
+| max-in-flight-requests-per-connection | 1 |
+
+**消费者优化**:
+
+| 参数 | 值 |
+|------|-----|
+| fetch-min-size | 1 |
+| fetch-max-wait | 5000ms |
+| max-poll-records | 100 |
+| max-poll-interval-ms | 300000ms |
+| session-timeout-ms | 30000ms |
+
+### 18.7 接口幂等性
+
+通过 Redis + AOP 实现接口幂等性校验，支持多种幂等键提取方式。
+
+**注解定义**:
+
+```java
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Idempotent {
+    String key() default "";
+    long expireTime() default 60;
+    TimeUnit timeUnit() default TimeUnit.SECONDS;
+    String prefix() default "idempotent:";
+}
+```
+
+**实现代码**: [Idempotent.java](smart-quantify-common/src/main/java/com/smartquantify/common/annotation/Idempotent.java)
+
+**AOP 切面**: 支持从 Header、Parameter 或自动生成 UUID 提取幂等键。
+
+**实现代码**: [IdempotentAspect.java](smart-quantify-common/src/main/java/com/smartquantify/common/aspect/IdempotentAspect.java)
+
+### 18.8 API 网关限流
+
+支持多种限流维度：IP、用户ID、API Key、策略ID。
+
+**限流配置**:
+
+| 服务 | 限流维度 | 补充速率 | 突发容量 |
+|------|----------|----------|----------|
+| market-service | IP | 200/s | 400 |
+| strategy-service | 用户ID | 100/s | 200 |
+| risk-service | IP | 150/s | 300 |
+| execution-service | API Key | 300/s | 600 |
+| backtest-service | 用户ID | 30/s | 100 |
+
+**实现代码**: [RateLimitConfig.java](smart-quantify-gateway/src/main/java/com/smartquantify/gateway/config/RateLimitConfig.java)
+
+### 18.9 服务健康检查
+
+集成 Spring Boot Actuator，提供健康检查和监控端点。
+
+**自定义健康指示器**:
+
+| 指示器 | 检查内容 |
+|--------|----------|
+| redisHealthIndicator | Redis 连接状态 |
+| kafkaHealthIndicator | Kafka 可用性 |
+| exchangeAdaptersHealthIndicator | 交易所适配器状态 |
+
+**实现代码**: [HealthIndicatorConfig.java](smart-quantify-common/src/main/java/com/smartquantify/common/config/HealthIndicatorConfig.java)
+
+**端点配置**:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+```
+
+### 18.10 全局异常处理
+
+增强全局异常处理，添加熔断、限流、服务不可用等异常类型。
+
+**新增异常类型**:
+
+| 异常类型 | HTTP状态码 | 用途 |
+|----------|------------|------|
+| CircuitBreakerException | 503 | 熔断器打开 |
+| RateLimitException | 429 | 限流触发 |
+| ServiceUnavailableException | 503 | 服务降级 |
+
+**实现代码**: [GlobalExceptionHandler.java](smart-quantify-common/src/main/java/com/smartquantify/common/exception/GlobalExceptionHandler.java), [CircuitBreakerException.java](smart-quantify-common/src/main/java/com/smartquantify/common/exception/CircuitBreakerException.java), [RateLimitException.java](smart-quantify-common/src/main/java/com/smartquantify/common/exception/RateLimitException.java), [ServiceUnavailableException.java](smart-quantify-common/src/main/java/com/smartquantify/common/exception/ServiceUnavailableException.java)
+
+### 18.11 高可用架构
+
+**服务注册与发现**: Nacos 实现服务注册、心跳检测、故障转移。
+
+**服务降级**: 
+- 熔断降级：交易所 API 调用失败时返回缓存数据或默认值
+- 限流降级：超过限流阈值时返回 429 状态码
+- 服务降级：依赖服务不可用时返回缓存数据
+
+**故障恢复**:
+- Kafka 消息重试机制
+- 数据库连接池自动重连
+- Redis 哨兵模式支持
+- 健康检查触发服务下线
+
+**数据一致性**:
+- 订单使用 Outbox 模式，保证最终一致性
+- Kafka 事务消息保证消息不丢失
+- 分布式锁保证同一操作的唯一性

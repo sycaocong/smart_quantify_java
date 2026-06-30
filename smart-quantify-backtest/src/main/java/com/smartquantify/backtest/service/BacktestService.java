@@ -12,6 +12,7 @@ import com.smartquantify.adapter.ExchangeAdapter;
 import com.smartquantify.common.util.JsonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BacktestService {
     private final BacktestTaskRepository backtestTaskRepository;
+    private final AdapterFactory adapterFactory;
 
     @Transactional
     public BacktestTask createBacktest(BacktestRequest request) {
@@ -75,25 +77,46 @@ public class BacktestService {
         task = backtestTaskRepository.save(task);
         log.info("Backtest started: id={}", task.getId());
 
+        executeBacktestAsync(task.getId());
+
+        return task;
+    }
+
+    @Async("backtestExecutor")
+    public void executeBacktestAsync(String taskId) {
+        log.info("Async backtest execution started: taskId={}", taskId);
+
         try {
+            BacktestTask task = backtestTaskRepository.findById(taskId).orElse(null);
+            if (task == null) {
+                log.error("Backtest task not found during async execution: {}", taskId);
+                return;
+            }
+
             BacktestResult result = executeBacktest(task);
+
             task.setResult(JsonUtil.toJson(result));
             task.setStatus(BacktestStatus.COMPLETED);
             task.setCompletedAt(LocalDateTime.now());
+            backtestTaskRepository.save(task);
+
             log.info("Backtest completed: id={}, finalCapital={}, totalReturn={}%",
                     task.getId(), result.getFinalCapital(),
                     result.getTotalReturn().multiply(new BigDecimal("100")));
-        } catch (Exception e) {
-            task.setStatus(BacktestStatus.FAILED);
-            task.setErrorMessage(e.getMessage());
-            log.error("Backtest failed: id={}, error={}", task.getId(), e.getMessage());
-        }
 
-        return backtestTaskRepository.save(task);
+        } catch (Exception e) {
+            BacktestTask task = backtestTaskRepository.findById(taskId).orElse(null);
+            if (task != null) {
+                task.setStatus(BacktestStatus.FAILED);
+                task.setErrorMessage(e.getMessage());
+                backtestTaskRepository.save(task);
+            }
+            log.error("Backtest failed: id={}, error={}", taskId, e.getMessage());
+        }
     }
 
     private BacktestResult executeBacktest(BacktestTask task) {
-        ExchangeAdapter adapter = AdapterFactory.getAdapter(Exchange.BINANCE);
+        ExchangeAdapter adapter = adapterFactory.getAdapter(Exchange.BINANCE);
         List<Kline> klines = adapter.getKlines(task.getSymbol(), task.getInterval(), 100);
 
         BigDecimal capital = task.getInitialCapital();

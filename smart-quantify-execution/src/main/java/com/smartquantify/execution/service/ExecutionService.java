@@ -2,6 +2,7 @@ package com.smartquantify.execution.service;
 
 import com.smartquantify.adapter.AdapterFactory;
 import com.smartquantify.adapter.ExchangeAdapter;
+import com.smartquantify.common.event.OrderCreatedEvent;
 import com.smartquantify.execution.dto.OrderRequest;
 import com.smartquantify.execution.entity.Order;
 import com.smartquantify.execution.entity.Trade;
@@ -14,6 +15,7 @@ import com.smartquantify.common.enums.Side;
 import com.smartquantify.common.model.CancelOrderRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +31,16 @@ import java.util.UUID;
 public class ExecutionService {
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
+    private final AdapterFactory adapterFactory;
+    private final KafkaTemplate<String, OrderCreatedEvent> orderCreatedKafkaTemplate;
 
     @Transactional
     public Order submitOrder(OrderRequest request) {
         Exchange exchange = Exchange.valueOf(request.getExchange());
+        String orderId = UUID.randomUUID().toString();
+
         Order order = Order.builder()
-                .id(UUID.randomUUID().toString())
+                .id(orderId)
                 .symbol(request.getSymbol())
                 .side(Side.valueOf(request.getSide()))
                 .type(OrderType.valueOf(request.getType()))
@@ -53,48 +59,21 @@ public class ExecutionService {
         order = orderRepository.save(order);
         log.info("Order created: id={}, symbol={}, side={}", order.getId(), order.getSymbol(), order.getSide());
 
-        try {
-            ExchangeAdapter adapter = AdapterFactory.getAdapter(exchange);
-            com.smartquantify.common.model.OrderRequest adapterRequest = com.smartquantify.common.model.OrderRequest.builder()
-                    .exchange(exchange)
-                    .symbol(request.getSymbol())
-                    .side(Side.valueOf(request.getSide()))
-                    .type(OrderType.valueOf(request.getType()))
-                    .price(request.getPrice())
-                    .quantity(request.getQuantity())
-                    .clientOrderId(request.getClientOrderId())
-                    .build();
+        OrderCreatedEvent event = OrderCreatedEvent.builder()
+                .orderId(order.getId())
+                .symbol(order.getSymbol())
+                .side(order.getSide().name())
+                .type(order.getType().name())
+                .quantity(order.getQuantity())
+                .price(order.getPrice())
+                .exchange(order.getExchange().name())
+                .clientOrderId(order.getClientOrderId())
+                .strategyId(order.getStrategyId())
+                .createdAt(order.getCreatedAt())
+                .build();
 
-            com.smartquantify.common.model.Order adapterOrder = adapter.placeOrder(adapterRequest);
-
-            order.setStatus(adapterOrder.getStatus());
-            order.setFilledQuantity(adapterOrder.getFilledQuantity());
-            order.setRemainingQuantity(adapterOrder.getRemainingQuantity());
-            order.setAvgPrice(adapterOrder.getAvgPrice());
-            order.setUpdatedAt(LocalDateTime.now());
-            order = orderRepository.save(order);
-
-            if (order.getStatus() == OrderStatus.FILLED) {
-                Trade trade = Trade.builder()
-                        .id(UUID.randomUUID().toString())
-                        .orderId(order.getId())
-                        .symbol(order.getSymbol())
-                        .side(order.getSide())
-                        .price(order.getAvgPrice())
-                        .quantity(order.getFilledQuantity())
-                        .quoteQuantity(order.getAvgPrice().multiply(order.getFilledQuantity()))
-                        .exchange(order.getExchange())
-                        .createdAt(LocalDateTime.now())
-                        .build();
-                tradeRepository.save(trade);
-                log.info("Trade created: id={}, orderId={}", trade.getId(), trade.getOrderId());
-            }
-        } catch (Exception e) {
-            order.setStatus(OrderStatus.REJECTED);
-            order.setUpdatedAt(LocalDateTime.now());
-            order = orderRepository.save(order);
-            log.error("Order execution failed: {}", e.getMessage());
-        }
+        orderCreatedKafkaTemplate.send("order-created", order.getId(), event);
+        log.info("Order created event published: orderId={}", order.getId());
 
         return order;
     }
@@ -130,7 +109,7 @@ public class ExecutionService {
         }
 
         try {
-            ExchangeAdapter adapter = AdapterFactory.getAdapter(order.getExchange());
+            ExchangeAdapter adapter = adapterFactory.getAdapter(order.getExchange());
             com.smartquantify.common.model.CancelOrderRequest cancelRequest =
                     com.smartquantify.common.model.CancelOrderRequest.builder()
                             .exchange(order.getExchange())

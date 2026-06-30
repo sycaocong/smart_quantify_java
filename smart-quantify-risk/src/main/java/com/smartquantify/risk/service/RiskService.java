@@ -14,6 +14,8 @@ import com.smartquantify.common.enums.RiskRuleType;
 import com.smartquantify.common.util.JsonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,7 @@ public class RiskService {
     private final RiskStateRepository riskStateRepository;
 
     @Transactional
+    @CacheEvict(value = "riskRules", allEntries = true)
     public RiskRule createRule(RiskRuleRequest request) {
         String conditions = request.getConditions() != null ? JsonUtil.toJson(request.getConditions()) : "{}";
         String actions = request.getActions() != null ? JsonUtil.toJson(request.getActions()) : "[]";
@@ -66,11 +69,13 @@ public class RiskService {
                 .orElseThrow(() -> new RuntimeException("Risk rule not found: " + id));
     }
 
+    @Cacheable(value = "riskRules")
     public List<RiskRule> listRules() {
         return riskRuleRepository.findAll();
     }
 
     @Transactional
+    @CacheEvict(value = "riskRules", allEntries = true)
     public RiskRule updateRule(String id, RiskRuleRequest request) {
         RiskRule rule = riskRuleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Risk rule not found: " + id));
@@ -101,6 +106,7 @@ public class RiskService {
     }
 
     @Transactional
+    @CacheEvict(value = "riskRules", allEntries = true)
     public void deleteRule(String id) {
         RiskRule rule = riskRuleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Risk rule not found: " + id));
@@ -109,7 +115,7 @@ public class RiskService {
     }
 
     public RiskCheckResponse checkRisk(RiskCheckRequest request) {
-        List<RiskRule> rules = riskRuleRepository.findByEnabledTrue();
+        List<RiskRule> rules = listRules();
         List<RiskCheckResponse.RuleCheckResult> results = new ArrayList<>();
         boolean allPassed = true;
 
@@ -136,8 +142,7 @@ public class RiskService {
     private boolean evaluateRule(RiskRule rule, RiskCheckRequest request) {
         try {
             BigDecimal position = BigDecimal.ZERO;
-            RiskState state = riskStateRepository.findByExchangeAndStrategyId(
-                    Exchange.valueOf(request.getExchange()), request.getStrategyId()).orElse(null);
+            RiskState state = getState(request.getExchange(), request.getStrategyId());
             if (state != null) {
                 position = state.getCurrentPosition() != null ? state.getCurrentPosition() : BigDecimal.ZERO;
             }
@@ -172,6 +177,7 @@ public class RiskService {
         return limits;
     }
 
+    @Cacheable(value = "riskState", key = "#exchange + ':' + #strategyId")
     public RiskState getState(String exchange, String strategyId) {
         return riskStateRepository.findByExchangeAndStrategyId(Exchange.valueOf(exchange), strategyId)
                 .orElse(RiskState.builder()

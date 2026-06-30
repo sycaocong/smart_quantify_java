@@ -35,10 +35,39 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(CircuitBreakerException.class)
+    public ResponseEntity<Map<String, Object>> handleCircuitBreakerException(CircuitBreakerException ex) {
+        log.warn("Circuit breaker open for service: {}", ex.getServiceName());
+        Map<String, Object> body = buildErrorBody(HttpStatus.SERVICE_UNAVAILABLE, 
+                "Service temporarily unavailable, please try again later");
+        body.put("service", ex.getServiceName());
+        body.put("retryAfter", 30);
+        return new ResponseEntity<>(body, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitException(RateLimitException ex) {
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        Map<String, Object> body = buildErrorBody(HttpStatus.TOO_MANY_REQUESTS, 
+                "Rate limit exceeded, please try again later");
+        body.put("retryAfter", ex.getRetryAfter());
+        return new ResponseEntity<>(body, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleServiceUnavailableException(ServiceUnavailableException ex) {
+        log.warn("Service unavailable: {}", ex.getServiceName());
+        Map<String, Object> body = buildErrorBody(HttpStatus.SERVICE_UNAVAILABLE, 
+                "Service unavailable, falling back to cached data");
+        body.put("service", ex.getServiceName());
+        body.put("retryAfter", 10);
+        return new ResponseEntity<>(body, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         log.warn("Validation error: {}", errors);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, errors);
@@ -51,10 +80,15 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String message) {
+        return new ResponseEntity<>(buildErrorBody(status, message), status);
+    }
+
+    private Map<String, Object> buildErrorBody(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
         body.put("code", status.value());
         body.put("message", message);
         body.put("timestamp", LocalDateTime.now().toString());
-        return new ResponseEntity<>(body, status);
+        body.put("status", status.name());
+        return body;
     }
 }

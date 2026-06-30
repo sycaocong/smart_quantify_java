@@ -3,6 +3,11 @@ package com.smartquantify.adapter.huobi;
 import com.smartquantify.adapter.ExchangeAdapter;
 import com.smartquantify.common.enums.Exchange;
 import com.smartquantify.common.model.*;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,7 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Slf4j
+@Component
 public class HuobiAdapter implements ExchangeAdapter {
+    private static final String CB_NAME = "huobi-circuit-breaker";
+    private static final String RL_NAME = "huobi-rate-limiter";
+    private static final String BH_NAME = "huobi-bulkhead";
+
     @Override
     public String getName() {
         return "Huobi";
@@ -22,6 +33,9 @@ public class HuobiAdapter implements ExchangeAdapter {
     }
 
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getKlinesFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public List<Kline> getKlines(String symbol, String interval, int limit) {
         List<Kline> klines = new ArrayList<>();
         for (int i = 0; i < limit; i++) {
@@ -41,7 +55,15 @@ public class HuobiAdapter implements ExchangeAdapter {
         return klines;
     }
 
+    public List<Kline> getKlinesFallback(String symbol, String interval, int limit, Throwable t) {
+        log.warn("Huobi getKlines fallback triggered: {}", t.getMessage());
+        return new ArrayList<>();
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getOrderBookFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public OrderBook getOrderBook(String symbol, int limit) {
         List<OrderBook.OrderBookLevel> asks = new ArrayList<>();
         List<OrderBook.OrderBookLevel> bids = new ArrayList<>();
@@ -63,7 +85,15 @@ public class HuobiAdapter implements ExchangeAdapter {
                 .build();
     }
 
+    public OrderBook getOrderBookFallback(String symbol, int limit, Throwable t) {
+        log.warn("Huobi getOrderBook fallback triggered: {}", t.getMessage());
+        return null;
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getTickerFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public Ticker getTicker(String symbol) {
         return Ticker.builder()
                 .symbol(symbol)
@@ -79,7 +109,15 @@ public class HuobiAdapter implements ExchangeAdapter {
                 .build();
     }
 
+    public Ticker getTickerFallback(String symbol, Throwable t) {
+        log.warn("Huobi getTicker fallback triggered: {}", t.getMessage());
+        return null;
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getInstrumentsFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public List<Instrument> getInstruments() {
         List<Instrument> instruments = new ArrayList<>();
         instruments.add(Instrument.builder()
@@ -98,7 +136,15 @@ public class HuobiAdapter implements ExchangeAdapter {
         return instruments;
     }
 
+    public List<Instrument> getInstrumentsFallback(Throwable t) {
+        log.warn("Huobi getInstruments fallback triggered: {}", t.getMessage());
+        return new ArrayList<>();
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "placeOrderFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public com.smartquantify.common.model.Order placeOrder(OrderRequest request) {
         return com.smartquantify.common.model.Order.builder()
                 .id(java.util.UUID.randomUUID().toString())
@@ -118,11 +164,35 @@ public class HuobiAdapter implements ExchangeAdapter {
                 .build();
     }
 
+    public com.smartquantify.common.model.Order placeOrderFallback(OrderRequest request, Throwable t) {
+        log.warn("Huobi placeOrder fallback triggered: {}", t.getMessage());
+        return com.smartquantify.common.model.Order.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .symbol(request.getSymbol())
+                .side(request.getSide())
+                .type(request.getType())
+                .quantity(request.getQuantity())
+                .price(request.getPrice())
+                .status(com.smartquantify.common.enums.OrderStatus.REJECTED)
+                .filledQuantity(BigDecimal.ZERO)
+                .remainingQuantity(request.getQuantity())
+                .exchange(request.getExchange())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME)
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public void cancelOrder(CancelOrderRequest request) {
     }
 
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getOrderFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public com.smartquantify.common.model.Order getOrder(String symbol, String orderId) {
         return com.smartquantify.common.model.Order.builder()
                 .id(orderId)
@@ -141,8 +211,21 @@ public class HuobiAdapter implements ExchangeAdapter {
                 .build();
     }
 
+    public com.smartquantify.common.model.Order getOrderFallback(String symbol, String orderId, Throwable t) {
+        log.warn("Huobi getOrder fallback triggered: {}", t.getMessage());
+        return null;
+    }
+
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "getOpenOrdersFallback")
+    @RateLimiter(name = RL_NAME)
+    @Bulkhead(name = BH_NAME)
     public List<com.smartquantify.common.model.Order> getOpenOrders(String symbol) {
+        return new ArrayList<>();
+    }
+
+    public List<com.smartquantify.common.model.Order> getOpenOrdersFallback(String symbol, Throwable t) {
+        log.warn("Huobi getOpenOrders fallback triggered: {}", t.getMessage());
         return new ArrayList<>();
     }
 
