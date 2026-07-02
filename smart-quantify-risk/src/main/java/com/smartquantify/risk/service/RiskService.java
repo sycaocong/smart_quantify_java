@@ -25,14 +25,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 风控服务
+ * 负责风控规则的管理和实时风险检查
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RiskService {
+
+    /**
+     * 风控规则数据访问层
+     */
     private final RiskRuleRepository riskRuleRepository;
+
+    /**
+     * 风险限制数据访问层
+     */
     private final RiskLimitRepository riskLimitRepository;
+
+    /**
+     * 风险状态数据访问层
+     */
     private final RiskStateRepository riskStateRepository;
 
+    /**
+     * 创建风控规则
+     * 创建后自动清除规则缓存
+     * @param request 风控规则请求
+     * @return 创建的风控规则实体
+     */
     @Transactional
     @CacheEvict(value = "riskRules", allEntries = true)
     public RiskRule createRule(RiskRuleRequest request) {
@@ -64,16 +86,35 @@ public class RiskService {
         return rule;
     }
 
+    /**
+     * 获取风控规则详情
+     * @param id 规则ID
+     * @return 风控规则实体
+     * @throws RuntimeException 规则不存在时抛出异常
+     */
     public RiskRule getRule(String id) {
         return riskRuleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Risk rule not found: " + id));
     }
 
+    /**
+     * 获取风控规则列表
+     * 结果会被缓存，提高查询性能
+     * @return 风控规则列表
+     */
     @Cacheable(value = "riskRules")
     public List<RiskRule> listRules() {
         return riskRuleRepository.findAll();
     }
 
+    /**
+     * 更新风控规则
+     * 更新后自动清除规则缓存
+     * @param id 规则ID
+     * @param request 风控规则更新请求
+     * @return 更新后的风控规则实体
+     * @throws RuntimeException 规则不存在时抛出异常
+     */
     @Transactional
     @CacheEvict(value = "riskRules", allEntries = true)
     public RiskRule updateRule(String id, RiskRuleRequest request) {
@@ -105,6 +146,12 @@ public class RiskService {
         return rule;
     }
 
+    /**
+     * 删除风控规则
+     * 删除后自动清除规则缓存
+     * @param id 规则ID
+     * @throws RuntimeException 规则不存在时抛出异常
+     */
     @Transactional
     @CacheEvict(value = "riskRules", allEntries = true)
     public void deleteRule(String id) {
@@ -114,6 +161,12 @@ public class RiskService {
         log.info("Risk rule deleted: id={}, name={}", id, rule.getName());
     }
 
+    /**
+     * 执行风险检查
+     * 遍历所有风控规则，判断订单是否符合风险要求
+     * @param request 风险检查请求
+     * @return 风险检查结果，包含每条规则的检查结果
+     */
     public RiskCheckResponse checkRisk(RiskCheckRequest request) {
         List<RiskRule> rules = listRules();
         List<RiskCheckResponse.RuleCheckResult> results = new ArrayList<>();
@@ -139,6 +192,13 @@ public class RiskService {
                 .build();
     }
 
+    /**
+     * 评估单条风控规则
+     * 根据规则类型判断是否通过检查
+     * @param rule 风控规则
+     * @param request 风险检查请求
+     * @return 是否通过检查
+     */
     private boolean evaluateRule(RiskRule rule, RiskCheckRequest request) {
         try {
             BigDecimal position = BigDecimal.ZERO;
@@ -166,6 +226,15 @@ public class RiskService {
         }
     }
 
+    /**
+     * 获取风险限制列表
+     * 优先按策略ID查询，若无则按作用范围查询
+     * @param scope 作用范围（如：global、user）
+     * @param strategyId 策略ID（可选）
+     * @param symbol 交易对（可选）
+     * @param exchange 交易所（可选）
+     * @return 风险限制列表
+     */
     public List<RiskLimit> getLimits(String scope, String strategyId, String symbol, String exchange) {
         List<RiskLimit> limits = new ArrayList<>();
         if (strategyId != null) {
@@ -177,6 +246,14 @@ public class RiskService {
         return limits;
     }
 
+    /**
+     * 获取风险状态
+     * 结果会被缓存，提高查询性能
+     * 如果状态不存在，则返回默认状态
+     * @param exchange 交易所
+     * @param strategyId 策略ID
+     * @return 风险状态
+     */
     @Cacheable(value = "riskState", key = "#exchange + ':' + #strategyId")
     public RiskState getState(String exchange, String strategyId) {
         return riskStateRepository.findByExchangeAndStrategyId(Exchange.valueOf(exchange), strategyId)

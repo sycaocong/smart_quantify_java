@@ -11,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Bybit交易所适配器
+ * 实现与Bybit交易所的API交互
+ */
 @Slf4j
 @Component
 public class BybitAdapter implements ExchangeAdapter {
@@ -55,7 +59,7 @@ public class BybitAdapter implements ExchangeAdapter {
         return com.smartquantify.common.model.Order.builder()
                 .id("BYBIT-" + System.currentTimeMillis())
                 .symbol(request.getSymbol())
-                .status("NEW")
+                .status(OrderStatus.NEW)
                 .build();
     }
 

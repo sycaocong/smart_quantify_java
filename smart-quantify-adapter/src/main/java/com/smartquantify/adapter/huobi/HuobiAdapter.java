@@ -2,6 +2,7 @@ package com.smartquantify.adapter.huobi;
 
 import com.smartquantify.adapter.ExchangeAdapter;
 import com.smartquantify.common.enums.Exchange;
+import com.smartquantify.common.enums.OrderStatus;
 import com.smartquantify.common.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Huobi交易所适配器
+ * 实现与Huobi交易所的API交互
+ */
 @Slf4j
 @Component
 public class HuobiAdapter implements ExchangeAdapter {
@@ -54,7 +59,7 @@ public class HuobiAdapter implements ExchangeAdapter {
         return com.smartquantify.common.model.Order.builder()
                 .id("HUOBI-" + System.currentTimeMillis())
                 .symbol(request.getSymbol())
-                .status("NEW")
+                .status(OrderStatus.NEW)
                 .build();
     }
 

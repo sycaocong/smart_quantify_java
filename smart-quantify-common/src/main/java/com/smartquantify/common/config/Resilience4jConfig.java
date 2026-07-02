@@ -19,10 +19,19 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
+/**
+ * Resilience4j配置类
+ * 配置熔断器、限流器和舱壁等容错组件
+ */
 @Slf4j
 @Configuration
 public class Resilience4jConfig {
 
+    /**
+     * 配置熔断器注册中心
+     * 失败率阈值50%，打开状态等待30秒，半开状态允许5次调用
+     * @return CircuitBreakerRegistry实例
+     */
     @Bean
     public CircuitBreakerRegistry circuitBreakerRegistry() {
         CircuitBreakerConfig config = CircuitBreakerConfig.custom()
@@ -38,6 +47,11 @@ public class Resilience4jConfig {
         return CircuitBreakerRegistry.of(config);
     }
 
+    /**
+     * 配置限流器注册中心
+     * 每秒限制100次调用，超时等待5秒
+     * @return RateLimiterRegistry实例
+     */
     @Bean
     public RateLimiterRegistry rateLimiterRegistry() {
         RateLimiterConfig config = RateLimiterConfig.custom()
@@ -49,6 +63,11 @@ public class Resilience4jConfig {
         return RateLimiterRegistry.of(config);
     }
 
+    /**
+     * 配置舱壁注册中心
+     * 最大并发调用20次，等待时间500毫秒
+     * @return BulkheadRegistry实例
+     */
     @Bean
     public BulkheadRegistry bulkheadRegistry() {
         BulkheadConfig config = BulkheadConfig.custom()
@@ -59,6 +78,11 @@ public class Resilience4jConfig {
         return BulkheadRegistry.of(config);
     }
 
+    /**
+     * 配置熔断器事件监听器
+     * 监听熔断器状态变更事件并记录日志
+     * @return RegistryEventConsumer实例
+     */
     @Bean
     public RegistryEventConsumer<CircuitBreaker> circuitBreakerRegistryEventConsumer() {
         return new RegistryEventConsumer<CircuitBreaker>() {

@@ -26,6 +26,26 @@ spring:
           min-idle: 2
           max-wait: 2000ms
 
+  cache:
+    redis:
+      time-to-live: 300000ms
+      cache-names:
+        - klines
+        - orderBook
+        - ticker
+        - instruments
+
+smart:
+  quantify:
+    cache:
+      ttl:
+        klines: 30s
+        orderBook: 15s
+        ticker: 10s
+        instruments: 5m
+        riskRules: 10m
+        riskState: 5m
+
 management:
   endpoints:
     web:

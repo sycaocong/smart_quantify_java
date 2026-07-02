@@ -25,15 +25,41 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 订单执行服务
+ * 负责订单的创建、提交、取消、状态查询和同步操作
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExecutionService {
+
+    /**
+     * 订单数据访问层
+     */
     private final OrderRepository orderRepository;
+
+    /**
+     * 成交记录数据访问层
+     */
     private final TradeRepository tradeRepository;
+
+    /**
+     * 交易所适配器工厂
+     */
     private final AdapterFactory adapterFactory;
+
+    /**
+     * Kafka消息发送模板，用于发布订单创建事件
+     */
     private final KafkaTemplate<String, OrderCreatedEvent> orderCreatedKafkaTemplate;
 
+    /**
+     * 提交订单
+     * 创建订单记录并发布到Kafka进行异步执行
+     * @param request 订单请求，包含交易对、方向、类型、数量、价格等信息
+     * @return 创建的订单实体
+     */
     @Transactional
     public Order submitOrder(OrderRequest request) {
         Exchange exchange = Exchange.valueOf(request.getExchange());
@@ -78,11 +104,25 @@ public class ExecutionService {
         return order;
     }
 
+    /**
+     * 获取订单详情
+     * @param id 订单ID
+     * @return 订单实体
+     * @throws RuntimeException 订单不存在时抛出异常
+     */
     public Order getOrder(String id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + id));
     }
 
+    /**
+     * 获取订单列表
+     * 支持按状态、交易对、交易所进行筛选
+     * @param status 订单状态（可选）
+     * @param symbol 交易对（可选）
+     * @param exchange 交易所（可选）
+     * @return 订单列表
+     */
     public List<Order> listOrders(String status, String symbol, String exchange) {
         List<Order> orders = new ArrayList<>();
         if (status != null && symbol != null) {
@@ -99,6 +139,13 @@ public class ExecutionService {
         return orders;
     }
 
+    /**
+     * 取消订单
+     * 仅支持取消 NEW 或 PARTIALLY_FILLED 状态的订单
+     * @param id 订单ID
+     * @return 更新后的订单实体
+     * @throws RuntimeException 订单不存在时抛出异常
+     */
     @Transactional
     public Order cancelOrder(String id) {
         Order order = orderRepository.findById(id)
@@ -129,6 +176,10 @@ public class ExecutionService {
         return order;
     }
 
+    /**
+     * 同步订单状态
+     * 从交易所拉取最新的订单状态并更新本地记录
+     */
     @Transactional
     public void syncOrders() {
         log.info("Syncing orders from exchanges...");

@@ -24,13 +24,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 回测服务
+ * 负责回测任务的创建、执行和结果查询
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BacktestService {
+
+    /**
+     * 回测任务仓储
+     */
     private final BacktestTaskRepository backtestTaskRepository;
+
+    /**
+     * 交易所适配器工厂
+     */
     private final AdapterFactory adapterFactory;
 
+    /**
+     * 创建回测任务
+     * @param request 回测请求参数
+     * @return 创建的回测任务实体
+     */
     @Transactional
     public BacktestTask createBacktest(BacktestRequest request) {
         String parameters = request.getParameters() != null ? JsonUtil.toJson(request.getParameters()) : "{}";
@@ -55,15 +72,32 @@ public class BacktestService {
         return task;
     }
 
+    /**
+     * 获取回测任务详情
+     * @param id 回测任务ID
+     * @return 回测任务实体
+     * @throws RuntimeException 任务不存在时抛出异常
+     */
     public BacktestTask getBacktest(String id) {
         return backtestTaskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Backtest task not found: " + id));
     }
 
+    /**
+     * 获取回测任务列表
+     * @return 回测任务列表
+     */
     public List<BacktestTask> listBacktests() {
         return backtestTaskRepository.findAll();
     }
 
+    /**
+     * 运行回测
+     * 将任务状态变更为 RUNNING 并异步执行回测逻辑
+     * @param id 回测任务ID
+     * @return 更新后的回测任务实体
+     * @throws RuntimeException 任务不存在时抛出异常
+     */
     @Transactional
     public BacktestTask runBacktest(String id) {
         BacktestTask task = backtestTaskRepository.findById(id)
@@ -82,6 +116,11 @@ public class BacktestService {
         return task;
     }
 
+    /**
+     * 异步执行回测
+     * 使用 backtestExecutor 线程池执行回测逻辑
+     * @param taskId 回测任务ID
+     */
     @Async("backtestExecutor")
     public void executeBacktestAsync(String taskId) {
         log.info("Async backtest execution started: taskId={}", taskId);
@@ -115,6 +154,12 @@ public class BacktestService {
         }
     }
 
+    /**
+     * 执行回测核心逻辑
+     * 使用K线数据模拟策略交易，计算收益指标
+     * @param task 回测任务实体
+     * @return 回测结果
+     */
     private BacktestResult executeBacktest(BacktestTask task) {
         ExchangeAdapter adapter = adapterFactory.getAdapter(Exchange.BINANCE);
         List<Kline> klines = adapter.getKlines(task.getSymbol(), task.getInterval(), 100);
@@ -232,6 +277,13 @@ public class BacktestService {
                 .build();
     }
 
+    /**
+     * 取消回测任务
+     * 仅支持取消 RUNNING 状态的任务
+     * @param id 回测任务ID
+     * @return 更新后的回测任务实体
+     * @throws RuntimeException 任务不存在时抛出异常
+     */
     @Transactional
     public BacktestTask cancelBacktest(String id) {
         BacktestTask task = backtestTaskRepository.findById(id)
@@ -247,6 +299,13 @@ public class BacktestService {
         return task;
     }
 
+    /**
+     * 获取回测结果
+     * 仅当任务状态为 COMPLETED 时返回结果
+     * @param id 回测任务ID
+     * @return 回测结果
+     * @throws RuntimeException 任务不存在或未完成时抛出异常
+     */
     public BacktestResult getBacktestResult(String id) {
         BacktestTask task = backtestTaskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Backtest task not found: " + id));

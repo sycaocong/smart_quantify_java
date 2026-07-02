@@ -11,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * OKX交易所适配器
+ * 实现与OKX交易所的API交互
+ */
 @Slf4j
 @Component
 public class OkxAdapter implements ExchangeAdapter {

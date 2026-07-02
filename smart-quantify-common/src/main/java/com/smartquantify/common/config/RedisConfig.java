@@ -10,16 +10,31 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+/**
+ * Redis配置类
+ * 配置Redisson客户端和StringRedisTemplate
+ */
 @Slf4j
 @Configuration
 public class RedisConfig {
 
+    /**
+     * Redis主机地址
+     */
     @Value("${spring.data.redis.host:localhost}")
     private String redisHost;
 
+    /**
+     * Redis端口
+     */
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
+    /**
+     * 配置Redisson客户端
+     * 用于分布式锁和高级Redis功能
+     * @return RedissonClient实例
+     */
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
@@ -34,6 +49,12 @@ public class RedisConfig {
         return client;
     }
 
+    /**
+     * 配置StringRedisTemplate
+     * 用于简单的字符串操作和限流计数
+     * @param connectionFactory Redis连接工厂
+     * @return StringRedisTemplate实例
+     */
     @Bean
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
         StringRedisTemplate template = new StringRedisTemplate();

@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Binance交易所适配器
+ * 实现与Binance交易所的API交互
+ */
 @Slf4j
 @Component
 public class BinanceAdapter implements ExchangeAdapter {
